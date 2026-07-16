@@ -52,7 +52,7 @@ export default function VRInstructionStep() {
       >
         <Link
           href="/quiz"
-          className="bg-[#E29D29] hover:bg-[#F2AE3A] active:scale-95 text-white font-bold text-sm md:text-base px-10 py-3.5 rounded-full shadow-[0_4px_20px_rgba(226,157,41,0.4)] transition-all tracking-wider uppercase flex items-center gap-2 border border-yellow-500/20 inline-block"
+          className="bg-[#E29D29] hover:bg-[#F2AE3A] active:scale-95 text-white font-bold text-sm md:text-base px-10 py-3.5 rounded-full shadow-[0_4px_20px_rgba(226,157,41,0.45)] transition-all tracking-wider uppercase flex items-center gap-2 border border-yellow-500/20 inline-block"
         >
           Selanjutnya
           <svg

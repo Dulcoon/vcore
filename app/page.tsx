@@ -21,16 +21,28 @@ export default function Home() {
       <div className="absolute top-[10%] left-[10%] w-[35%] h-[35%] bg-purple-900/10 blur-[150px] rounded-full pointer-events-none z-0" />
       <div className="absolute bottom-[10%] right-[10%] w-[35%] h-[35%] bg-blue-900/10 blur-[150px] rounded-full pointer-events-none z-0" />
 
-      {/* Shared Background for Steps 1-3 */}
-      <div
-        className={`absolute inset-0 z-0 bg-cover bg-no-repeat transition-all duration-1000 ease-in-out
+      {/* Shared Background for Steps 1-3 (Bottom Layer) */}
+      <div 
+        className={`absolute bottom-0 left-0 right-0 h-1/2 z-0 bg-cover bg-no-repeat transition-all duration-1000 ease-in-out
           ${step <= 3 ? 'opacity-100' : 'opacity-0'}
           ${step === 1 ? 'bg-left md:bg-center' : ''}
           ${step === 2 ? 'bg-center md:bg-center' : ''}
           ${step === 3 ? 'bg-right md:bg-center' : ''}
         `}
-        style={{
+        style={{ 
           backgroundImage: "url('/images/hero-bg.png')",
+        }}
+      />
+      {/* Shared Background for Steps 1-3 (Top Layer) */}
+      <div 
+        className={`absolute top-0 left-0 right-0 h-1/2 z-0 bg-cover bg-no-repeat transition-all duration-1000 ease-in-out
+          ${step <= 3 ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          ${step === 1 ? 'bg-left md:bg-center' : ''}
+          ${step === 2 ? 'bg-center md:bg-center' : ''}
+          ${step === 3 ? 'bg-right md:bg-center' : ''}
+        `}
+        style={{ 
+          backgroundImage: "url('/images/bg-hero-atas.png')",
         }}
       />
 
