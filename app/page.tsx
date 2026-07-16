@@ -22,14 +22,14 @@ export default function Home() {
       <div className="absolute bottom-[10%] right-[10%] w-[35%] h-[35%] bg-blue-900/10 blur-[150px] rounded-full pointer-events-none z-0" />
 
       {/* Shared Background for Steps 1-3 */}
-      <div 
+      <div
         className={`absolute inset-0 z-0 bg-cover bg-no-repeat transition-all duration-1000 ease-in-out
           ${step <= 3 ? 'opacity-100' : 'opacity-0'}
           ${step === 1 ? 'bg-left md:bg-center' : ''}
           ${step === 2 ? 'bg-center md:bg-center' : ''}
           ${step === 3 ? 'bg-right md:bg-center' : ''}
         `}
-        style={{ 
+        style={{
           backgroundImage: "url('/images/hero-bg.png')",
         }}
       />
@@ -60,11 +60,10 @@ export default function Home() {
           <button
             key={i}
             onClick={() => setStep(i)}
-            className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
-              i === step 
-                ? "bg-[#E29D29] scale-125 shadow-[0_0_12px_rgba(226,157,41,0.6)]" 
-                : "bg-white/20 hover:bg-white/40"
-            }`}
+            className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${i === step
+              ? "bg-[#E29D29] scale-125 shadow-[0_0_12px_rgba(226,157,41,0.6)]"
+              : "bg-white/20 hover:bg-white/40"
+              }`}
             aria-label={`Slide ${i}`}
           />
         ))}
