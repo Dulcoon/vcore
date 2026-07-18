@@ -54,12 +54,16 @@ export default function QuizPage() {
   };
 
   if (phase === "select-profile") {
-    return <SelectProfileQuiz onSelect={handleSelectProfile} />;
+    return <SelectProfileQuiz onSelect={handleSelectProfile} onBack={() => router.push("/?step=5")} />;
   }
 
   if (phase === "select-job") {
     return <JobSelectQuiz onSelect={handleSelectJob} />;
   }
+
+  const handleBack = () => {
+    setPhase("select-job");
+  };
 
   // Quiz / plan builder phase
   return (
@@ -67,6 +71,7 @@ export default function QuizPage() {
       job={selectedJob}
       profile={activeProfile}
       onFinish={handleFinish}
+      onBack={handleBack}
     />
   );
 }

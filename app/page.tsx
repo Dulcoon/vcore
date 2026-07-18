@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import HeroStep from "@/components/steps/HeroStep";
 import CatchphraseStep from "@/components/steps/CatchphraseStep";
@@ -10,6 +10,19 @@ import VRInstructionStep from "@/components/steps/VRInstructionStep";
 
 export default function Home() {
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const stepParam = params.get("step");
+      if (stepParam) {
+        const parsed = parseInt(stepParam, 10);
+        if (parsed >= 1 && parsed <= 5) {
+          setStep(parsed);
+        }
+      }
+    }
+  }, []);
 
   const handleNext = () => {
     if (step < 5) setStep(step + 1);

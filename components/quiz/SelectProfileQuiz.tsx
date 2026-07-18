@@ -14,6 +14,7 @@ interface Profile {
 
 interface SelectProfileQuizProps {
   onSelect: (profile: Profile) => void;
+  onBack: () => void;
 }
 
 const dummyProfiles: Profile[] = [
@@ -24,7 +25,7 @@ const dummyProfiles: Profile[] = [
   { name: "Rian", age: "11", grade: "Kelas 5 SD", avatar: "/images/avatar_scientist.png" },
 ];
 
-export default function SelectProfileQuiz({ onSelect }: SelectProfileQuizProps) {
+export default function SelectProfileQuiz({ onSelect, onBack }: SelectProfileQuizProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -87,6 +88,17 @@ export default function SelectProfileQuiz({ onSelect }: SelectProfileQuizProps) 
       <BatikOrnament position="top-right" className="opacity-15" />
       <BatikOrnament position="bottom-left" className="opacity-15" />
       <BatikOrnament position="bottom-right" className="opacity-15" />
+
+      {/* Back button */}
+      <button
+        onClick={onBack}
+        aria-label="Kembali"
+        className="absolute top-8 left-6 z-30 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/15 transition-all active:scale-95"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
 
       {/* Logos */}
       <div className="z-10 w-full mt-2">
