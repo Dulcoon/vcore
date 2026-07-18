@@ -49,6 +49,15 @@ const JOB_KEY_MAP: Record<string, string> = {
   "Desain Grafis": "desaingrafis",
 };
 
+const PROFESSION_AVATARS: Record<string, string> = {
+  pelayan: "/images/avatar_waiter.png",
+  fotostudio: "/images/avatar_photographer.png",
+  chef: "/images/avatar_chef.png",
+  contentcreator: "/images/avatar_creator.png",
+  guruisyarat: "/images/avatar_teacher.png",
+  desaingrafis: "/images/avatar_designer.png",
+};
+
 /* ─── Data ───────────────────────────────────────────────── */
 const DATA: Record<string, ProfessionData> = {
   pelayan: {
@@ -745,6 +754,192 @@ function ResultModal({
     );
   }
 
+  const renderPosterContent = (isExport: boolean) => {
+    const avatarUrl = profile?.avatar || PROFESSION_AVATARS[profKey] || null;
+
+    return (
+      <div
+        style={{
+          width: isExport ? 375 : "100%",
+          background: "linear-gradient(180deg,#242058,#1B1A3E 60%,#17153A)",
+          border: "1px solid #3B366E", borderRadius: 22, padding: "26px 22px",
+          position: "relative", overflow: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
+        <BatikCorner position="tr" />
+        <BatikCorner position="bl" />
+
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+          <Logo className="w-20" />
+        </div>
+        <p style={{ textAlign: "center", fontSize: 11, color: "#B6B2DA", margin: "2px 0 18px", letterSpacing: 0.5, fontWeight: 700 }}>
+          PETA RENCANA KARIER
+        </p>
+
+        {/* Profile row */}
+        <div style={{
+          display: "flex", alignItems: "center",
+          background: "rgba(242,169,59,0.08)", border: "1px solid rgba(242,169,59,0.3)",
+          borderRadius: 16, padding: "14px 16px", marginBottom: 18,
+        }}>
+          {/* Avatar */}
+          {avatarUrl ? (
+            <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", flexShrink: 0, position: "relative", marginRight: 14 }}>
+              <Image src={avatarUrl} alt={profile?.name ?? prof.name} fill style={{ objectFit: "cover" }} />
+            </div>
+          ) : (
+            <div style={{
+              width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+              background: "linear-gradient(135deg,#F9CA75,#C97F1E)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 26, marginRight: 14,
+            }}>
+              {prof.icon}
+            </div>
+          )}
+          <div>
+            {profile && (
+              <p style={{ fontSize: 11, color: "#B6B2DA", fontWeight: 600, margin: "0 0 2px" }}>
+                {profile.name} · {profile.grade}
+              </p>
+            )}
+            <p style={{ fontSize: 11, color: "#B6B2DA", fontWeight: 600, margin: 0 }}>Cita-citaku</p>
+            <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, fontSize: 17, margin: 0, color: "#fff" }}>
+              {prof.name}
+            </p>
+          </div>
+        </div>
+
+        {/* Steps Bagan (Visual Roadmap Diagram) */}
+        <div style={{ position: "relative", margin: "24px 0", minHeight: Math.max(120, filledItems.length * 68) }}>
+          {/* Center Vertical dashed track line */}
+          <div style={{
+            position: "absolute", left: "calc(50% - 1.25px)", top: 10, bottom: 10,
+            width: 2.5, borderLeft: "2.5px dashed rgba(242,169,59,0.35)", zIndex: 0
+          }} />
+
+          <div style={{ display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
+            {filledItems.map((item, i) => {
+              const isLeft = i % 2 === 0;
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: isLeft ? "flex-start" : "flex-end",
+                    width: "100%",
+                    padding: "0 10px",
+                    boxSizing: "border-box",
+                    marginBottom: 14,
+                  }}
+                >
+                  {/* Node Card */}
+                  <div style={{
+                    width: "88%",
+                    background: "#242058",
+                    border: "1.5px solid #3B366E",
+                    borderRadius: 14,
+                    padding: "10px 12px",
+                    position: "relative",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxSizing: "border-box",
+                  }}>
+                    {/* Connection indicator pin linking to center track */}
+                    <div style={{
+                      position: "absolute",
+                      top: "calc(50% - 1px)",
+                      [isLeft ? "right" : "left"]: -12,
+                      width: 12,
+                      height: 2,
+                      background: "rgba(242,169,59,0.35)",
+                    }} />
+
+                    {/* Stable structure using Flexbox layout for robust html2canvas rendering */}
+                    <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                      {/* Step Number Circle */}
+                      <div style={{
+                        display: "inline-block",
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        background: "#0F0E24",
+                        border: "2px solid #F2A93B",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: "#F9CA75",
+                        textAlign: "center",
+                        lineHeight: "18px",
+                        marginRight: 8,
+                      }}>
+                        {i + 1}
+                      </div>
+
+                      {/* Icon */}
+                      <div style={{
+                        width: 24,
+                        height: 24,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 20,
+                        flexShrink: 0,
+                        marginRight: 8,
+                      }}>
+                        {item.icon}
+                      </div>
+
+                      {/* Content text */}
+                      <div style={{ flex: 1, minWidth: 0, paddingLeft: 2 }}>
+                        <p style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          margin: 0,
+                          color: "#fff",
+                          lineHeight: 1.3,
+                          whiteSpace: "normal"
+                        }}>
+                          {item.title}
+                        </p>
+                        <p style={{ fontSize: 9.5, color: "#B6B2DA", margin: "2px 0 0" }}>
+                          +{item.xp} XP
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Score footer */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderTop: "1px solid #3B366E", paddingTop: 16, marginBottom: 14,
+        }}>
+          <div>
+            <span style={{ display: "block", fontSize: 10.5, color: "#B6B2DA", fontWeight: 700, textTransform: "uppercase" }}>Total XP</span>
+            <span style={{ fontFamily: "var(--font-playfair)", fontSize: 26, fontWeight: 800, color: "#F9CA75" }}>{totalXp}</span>
+          </div>
+          {/* Level Badge - styled clean & premium matching design language */}
+          <div style={{
+            fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 6,
+            background: "rgba(242,169,59,0.08)", border: "1px solid rgba(242,169,59,0.3)",
+            color: "#F9CA75",
+          }}>{level}</div>
+        </div>
+
+        <p style={{
+          fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 12.5,
+          textAlign: "center", color: "#B6B2DA", lineHeight: 1.5, margin: 0,
+        }}>&ldquo;Setiap langkah kecil membawamu lebih dekat ke cita-cita!&rdquo;</p>
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -756,163 +951,23 @@ function ResultModal({
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ width: "100%", maxWidth: 400, maxHeight: "92vh", overflowY: "auto" }}>
+      <div style={{ width: "100%", maxWidth: 400, maxHeight: "92vh", overflowY: "auto", position: "relative" }}>
 
-        {/* Poster card */}
+        {/* 1. Visible Poster Card (for UI rendering on modal) */}
+        {renderPosterContent(false)}
+
+        {/* 2. Hidden Poster Card (absolute off-screen with fixed width for html2canvas export) */}
         <div
           ref={posterRef}
           style={{
-            background: "linear-gradient(180deg,#242058,#1B1A3E 60%,#17153A)",
-            border: "1px solid #3B366E", borderRadius: 22, padding: "26px 22px",
-            position: "relative", overflow: "hidden",
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+            width: 375,
+            boxSizing: "border-box",
           }}
         >
-          <BatikCorner position="tr" />
-          <BatikCorner position="bl" />
-
-          {/* Logo */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-            <Logo className="w-20" />
-          </div>
-          <p style={{ textAlign: "center", fontSize: 11, color: "#B6B2DA", margin: "2px 0 18px", letterSpacing: 0.5, fontWeight: 700 }}>
-            PETA RENCANA KARIER
-          </p>
-
-          {/* Profile row */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 14,
-            background: "rgba(242,169,59,0.08)", border: "1px solid rgba(242,169,59,0.3)",
-            borderRadius: 16, padding: "14px 16px", marginBottom: 18,
-          }}>
-            {/* Avatar */}
-            {profile?.avatar ? (
-              <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", flexShrink: 0, position: "relative" }}>
-                <Image src={profile.avatar} alt={profile.name} fill style={{ objectFit: "cover" }} />
-              </div>
-            ) : (
-              <div style={{
-                width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-                background: "linear-gradient(135deg,#F9CA75,#C97F1E)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26,
-              }}>
-                {prof.icon}
-              </div>
-            )}
-            <div>
-              {profile && (
-                <p style={{ fontSize: 11, color: "#B6B2DA", fontWeight: 600, margin: "0 0 2px" }}>
-                  {profile.name} · {profile.grade}
-                </p>
-              )}
-              <p style={{ fontSize: 11, color: "#B6B2DA", fontWeight: 600, margin: 0 }}>Cita-citaku</p>
-              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 800, fontSize: 17, margin: 0, color: "#fff" }}>
-                {prof.name}
-              </p>
-            </div>
-          </div>
-
-          {/* Steps Bagan (Visual Roadmap Diagram) */}
-          <div style={{ position: "relative", margin: "24px 0", minHeight: Math.max(120, filledItems.length * 68) }}>
-            {/* Center Vertical dashed track line */}
-            <div style={{
-              position: "absolute", left: "50%", top: 10, bottom: 10,
-              width: 0, borderLeft: "2.5px dashed rgba(242,169,59,0.35)",
-              transform: "translateX(-50%)", zIndex: 0
-            }} />
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "relative", zIndex: 1 }}>
-              {filledItems.map((item, i) => {
-                const isLeft = i % 2 === 0;
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: isLeft ? "flex-start" : "flex-end",
-                      width: "100%",
-                      padding: "0 10px",
-                    }}
-                  >
-                    {/* Node Card */}
-                    <div style={{
-                      width: "88%",
-                      background: "#242058",
-                      border: "1.5px solid #3B366E",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      position: "relative",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    }}>
-                      {/* Connection indicator pin linking to center track */}
-                      <div style={{
-                        position: "absolute",
-                        top: "50%",
-                        [isLeft ? "right" : "left"]: -12,
-                        width: 12,
-                        height: 2,
-                        background: "rgba(242,169,59,0.35)",
-                        transform: "translateY(-50%)"
-                      }} />
-
-                      {/* Stable structure using standard HTML table for robust html2canvas rendering */}
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ width: 28, verticalAlign: "middle" }}>
-                              {/* Step Number Circle */}
-                              <div style={{
-                                width: 22, height: 22, borderRadius: 11,
-                                background: "#0F0E24", border: "2px solid #F2A93B",
-                                textAlign: "center", lineHeight: "18px",
-                                fontSize: 11, fontWeight: 800, color: "#F9CA75",
-                              }}>{i + 1}</div>
-                            </td>
-                            <td style={{ width: 28, verticalAlign: "middle", fontSize: 20, textAlign: "center" }}>
-                              {item.icon}
-                            </td>
-                            <td style={{ verticalAlign: "middle", paddingLeft: 6 }}>
-                              <p style={{
-                                fontSize: 12, fontWeight: 700, margin: 0,
-                                color: "#fff", lineHeight: 1.3, whiteSpace: "normal"
-                              }}>
-                                {item.title}
-                              </p>
-                              <p style={{ fontSize: 9.5, color: "#B6B2DA", margin: "2px 0 0" }}>
-                                +{item.xp} XP
-                              </p>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Score footer */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            borderTop: "1px solid #3B366E", paddingTop: 16, marginBottom: 14,
-          }}>
-            <div>
-              <span style={{ display: "block", fontSize: 10.5, color: "#B6B2DA", fontWeight: 700, textTransform: "uppercase" }}>Total XP</span>
-              <span style={{ fontFamily: "var(--font-playfair)", fontSize: 26, fontWeight: 800, color: "#F9CA75" }}>{totalXp}</span>
-            </div>
-            {/* Level Badge - styled clean & premium matching design language */}
-            <div style={{
-              fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 6,
-              background: "rgba(242,169,59,0.08)", border: "1px solid rgba(242,169,59,0.3)",
-              color: "#F9CA75",
-            }}>{level}</div>
-          </div>
-
-          <p style={{
-            fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: 12.5,
-            textAlign: "center", color: "#B6B2DA", lineHeight: 1.5, margin: 0,
-          }}>&ldquo;Setiap langkah kecil membawamu lebih dekat ke cita-cita!&rdquo;</p>
+          {renderPosterContent(true)}
         </div>
 
         {/* Share Button (Full Width) */}
@@ -1317,8 +1372,8 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                   background: navyCard2, border: `2px solid ${gold}`, overflow: "hidden", position: "relative"
                 }}>
-                  {profile?.avatar ? (
-                    <Image src={profile.avatar} alt={profile?.name ?? ""} fill style={{ objectFit: "cover" }} />
+                  {profile?.avatar || PROFESSION_AVATARS[currentProf] ? (
+                    <Image src={profile?.avatar || PROFESSION_AVATARS[currentProf]} alt={profile?.name ?? ""} fill style={{ objectFit: "cover" }} />
                   ) : "🧑"}
                 </div>
                 <div>
