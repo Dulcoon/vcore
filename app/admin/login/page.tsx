@@ -54,7 +54,7 @@ export default function LoginPage() {
               name="email"
               required
               className="w-full px-4 py-3 bg-[#0F0E24] border border-[#3B366E] rounded-xl focus:outline-none focus:border-[#F2A93B] transition-colors text-white"
-              placeholder="admin@vicore.com"
+              placeholder="email@contoh.com"
             />
           </div>
           <div>

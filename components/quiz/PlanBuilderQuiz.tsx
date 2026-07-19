@@ -1784,6 +1784,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
                   return (
                     <div
                       key={item.id}
+                      className="select-none"
                       data-card-id={item.id}
                       onPointerDown={(e) => onPoolPointerDown(e, item.id)}
                       onPointerMove={onPoolPointerMove}
@@ -1796,7 +1797,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
                         transform: isSelected ? "translateY(-2px)" : "none",
                         borderRadius: 16, padding: 12, width: 148, minHeight: 164,
                         display: "flex", flexDirection: "column",
-                        cursor: "grab", userSelect: "none", touchAction: "pan-x",
+                        cursor: "grab", WebkitUserSelect: "none", userSelect: "none", touchAction: "none",
                         transition: "transform .15s ease, box-shadow .15s ease, border-color .15s ease",
                       }}
                     >
@@ -1878,6 +1879,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
 
                           {/* Slot card */}
                           <div
+                            className="select-none"
                             data-slot-empty={item ? undefined : "true"}
                             data-slot-idx={item ? undefined : slotIdx}
                             onClick={() => handleSlotClick(slotIdx)}
@@ -1889,6 +1891,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
                                 : "2px dashed rgba(242,169,59,.4)",
                               background: item ? navyCard : "rgba(255,255,255,0.02)",
                               cursor: "pointer",
+                              WebkitUserSelect: "none", userSelect: "none",
                               transition: "all .15s ease",
                             }}
                           >
