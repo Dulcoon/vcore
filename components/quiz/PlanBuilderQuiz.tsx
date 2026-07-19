@@ -850,49 +850,63 @@ function ResultModal({
                     <div style={{
                       position: "absolute",
                       top: "calc(50% - 1px)",
-                      [isLeft ? "right" : "left"]: -12,
+                      right: isLeft ? -12 : "auto",
+                      left: isLeft ? "auto" : -12,
                       width: 12,
                       height: 2,
                       background: "rgba(242,169,59,0.35)",
                     }} />
 
-                    {/* Stable structure using Flexbox layout for robust html2canvas rendering */}
-                    <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                      {/* Step Number Circle */}
-                      <div style={{
-                        display: "inline-block",
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        flexShrink: 0,
-                        background: "#0F0E24",
-                        border: "2px solid #F2A93B",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: "#F9CA75",
-                        textAlign: "center",
-                        lineHeight: "18px",
-                        marginRight: 8,
-                      }}>
-                        {i + 1}
+                    {/* Stable structure using CSS Table layout for robust html2canvas rendering */}
+                    <div style={{ display: "table", width: "100%", tableLayout: "fixed", boxSizing: "border-box" }}>
+                      {/* Step Number Circle cell */}
+                      <div style={{ display: "table-cell", verticalAlign: "middle", width: 22, boxSizing: "border-box" }}>
+                        <div style={{
+                          position: "relative",
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          background: "#0F0E24",
+                          border: "2px solid #F2A93B",
+                          boxSizing: "border-box",
+                        }}>
+                          <span style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: "#F9CA75",
+                            lineHeight: 1,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {i + 1}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Icon */}
+                      {/* Spacer cell */}
+                      <div style={{ display: "table-cell", width: 8 }} />
+
+                      {/* Icon cell */}
                       <div style={{
+                        display: "table-cell",
+                        verticalAlign: "middle",
                         width: 24,
-                        height: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
                         fontSize: 20,
-                        flexShrink: 0,
-                        marginRight: 8,
+                        lineHeight: 1,
+                        textAlign: "center",
+                        boxSizing: "border-box",
                       }}>
                         {item.icon}
                       </div>
 
-                      {/* Content text */}
-                      <div style={{ flex: 1, minWidth: 0, paddingLeft: 2 }}>
+                      {/* Spacer cell */}
+                      <div style={{ display: "table-cell", width: 8 }} />
+
+                      {/* Content text cell */}
+                      <div style={{ display: "table-cell", verticalAlign: "middle", boxSizing: "border-box" }}>
                         <p style={{
                           fontSize: 12,
                           fontWeight: 700,
