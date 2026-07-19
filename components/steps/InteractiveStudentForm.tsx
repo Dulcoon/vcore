@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { supabase } from "@/lib/supabase";
 
 interface InteractiveFormProps {
   onComplete: () => void;
@@ -65,14 +66,37 @@ export default function InteractiveStudentForm({ onComplete }: InteractiveFormPr
   const [selectedAvatar, setSelectedAvatar] = useState("waiter"); // Default to pre-select 'waiter'
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (formStep < 3) {
       setFormStep(formStep + 1);
     } else {
       // Save data & show completion screen
       const humanGrade = grades.find((g) => g.id === selectedGrade)?.label || selectedGrade;
       const avatarPath = avatars.find((a) => a.id === selectedAvatar)?.path || "";
-      const studentProfile = { name, age: selectedAge, grade: humanGrade, avatar: avatarPath };
+      
+      // Save to Supabase database
+      let studentId: string | undefined;
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .insert({
+            name,
+            age: selectedAge || null,
+            grade: humanGrade || null,
+            avatar_url: avatarPath || null,
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          studentId = data.id;
+        }
+      } catch (error) {
+        console.error("Failed to save student to database:", error);
+      }
+
+      const studentProfile = { id: studentId, name, age: selectedAge, grade: humanGrade, avatar: avatarPath };
       
       // Save active student profile for auto-skip
       try {

@@ -5,7 +5,10 @@ import BatikOrnament from "../BatikOrnament";
 import HeaderLogos from "../HeaderLogos";
 import Logo from "../Logo";
 
+import { supabase } from "@/lib/supabase";
+
 interface Profile {
+  id?: string;
   name: string;
   age: string;
   grade: string;
@@ -29,27 +32,55 @@ export default function SelectProfileQuiz({ onSelect, onBack }: SelectProfileQui
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load profiles from history or fallback to dummies
+  // Load profiles from database with fallback
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("student_profiles");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge stored profiles with dummies to ensure all options are always visible
-          // or just load stored profiles if they exist, but append dummies for completeness
-          const uniqueStored = parsed.filter(
-            (sp: Profile) => !dummyProfiles.some((dp) => dp.name.toLowerCase() === sp.name.toLowerCase())
-          );
-          setProfiles([...uniqueStored, ...dummyProfiles]);
-          return;
+    async function loadProfiles() {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from("students")
+          .select("id, name, age, grade, avatar_url")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const fetched: Profile[] = data.map((student) => ({
+            id: student.id,
+            name: student.name,
+            age: student.age || "",
+            grade: student.grade || "",
+            avatar: student.avatar_url || undefined,
+          }));
+          setProfiles(fetched);
+        } else {
+          // If DB is empty, use dummies
+          setProfiles(dummyProfiles);
         }
+      } catch (err) {
+        console.error("Database fetch failed, loading fallback from localStorage:", err);
+        // Fallback to local storage
+        try {
+          const stored = localStorage.getItem("student_profiles");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setProfiles(parsed);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("localStorage fallback failed", e);
+        }
+        setProfiles(dummyProfiles);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error("Failed to load profiles from localStorage", e);
     }
-    setProfiles(dummyProfiles);
+
+    loadProfiles();
   }, []);
 
   const toggleDropdown = () => setIsOpen(!isOpen);
@@ -128,10 +159,19 @@ export default function SelectProfileQuiz({ onSelect, onBack }: SelectProfileQui
           {/* Dropdown Trigger */}
           <button
             onClick={toggleDropdown}
-            className={`w-full bg-[#1c1e4c]/80 hover:bg-[#22245b]/80 border transition-all duration-300 rounded-2xl py-3.5 px-5 flex items-center justify-between text-white shadow-lg focus:outline-none
-              ${isOpen ? "border-[#E29D29]/80 shadow-[0_0_15px_rgba(226,157,41,0.15)]" : "border-white/10"}`}
+            disabled={isLoading}
+            className={`w-full bg-[#1c1e4c]/80 border transition-all duration-300 rounded-2xl py-3.5 px-5 flex items-center justify-between text-white shadow-lg focus:outline-none
+              ${isLoading ? "border-white/5 cursor-not-allowed" : isOpen ? "border-[#E29D29]/80 shadow-[0_0_15px_rgba(226,157,41,0.15)] hover:bg-[#22245b]/80" : "border-white/10 hover:bg-[#22245b]/80"}`}
           >
-            {selectedProfile ? (
+            {isLoading ? (
+              <div className="flex items-center gap-3 w-full animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-28 bg-white/20 rounded" />
+                  <div className="h-2 w-36 bg-white/10 rounded" />
+                </div>
+              </div>
+            ) : selectedProfile ? (
               <div className="flex items-center gap-3">
                 {/* Avatar Rendering */}
                 {selectedProfile.avatar ? (
@@ -158,16 +198,18 @@ export default function SelectProfileQuiz({ onSelect, onBack }: SelectProfileQui
             )}
 
             {/* Chevron Icon */}
-            <motion.svg
-              animate={{ rotate: isOpen ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-              className="w-5 h-5 text-white/50"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-            </motion.svg>
+            {!isLoading && (
+              <motion.svg
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-5 h-5 text-white/50"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+              </motion.svg>
+            )}
           </button>
 
           {/* Dropdown List */}

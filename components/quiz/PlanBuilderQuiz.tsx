@@ -3,9 +3,11 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Logo from "../Logo";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface Profile {
+  id?: string;
   name: string;
   age: string;
   grade: string;
@@ -21,6 +23,7 @@ interface Activity {
 }
 
 interface ProfessionData {
+  id?: string;
   name: string;
   icon: string;
   image: string;
@@ -593,6 +596,7 @@ function BatikCorner({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
 /* ─── Result Modal ───────────────────────────────────────── */
 function ResultModal({
   profKey,
+  profession,
   placed,
   profile,
   totalXp,
@@ -600,6 +604,7 @@ function ResultModal({
   onFinish,
 }: {
   profKey: string;
+  profession: ProfessionData;
   placed: Record<number, string | null>;
   profile: Profile | null;
   totalXp: number;
@@ -610,7 +615,7 @@ function ResultModal({
   const [isCelebrating, setIsCelebrating] = useState(true);
   const [celebrationProgress, setCelebrationProgress] = useState(0);
 
-  const prof = DATA[profKey];
+  const prof = profession;
   const level = getLevel(totalXp);
   const filledItems = Array.from({ length: SLOT_COUNT }, (_, i) => placed[i])
     .filter(Boolean)
@@ -635,25 +640,344 @@ function ResultModal({
     return () => clearInterval(interval);
   }, [isCelebrating]);
 
-  const handleShare = async () => {
-    if (!posterRef.current) return;
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(posterRef.current, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: "#1B1A3E",
-        logging: false,
+  // Draw the poster directly onto a Canvas using Canvas2D API.
+  // This avoids html2canvas emoji rendering bugs entirely — Canvas2D renders emoji natively.
+  // Draw the poster directly onto a Canvas using Canvas2D API.
+  // This avoids html2canvas emoji rendering bugs entirely — Canvas2D renders emoji natively.
+  const drawPosterToCanvas = async (): Promise<HTMLCanvasElement> => {
+    const SCALE = 2;
+    const W = 375;
+    const PADDING = 22;
+    const INNER_W = W - PADDING * 2;
+
+    // Dummy context for text measurement
+    const measureCanvas = document.createElement("canvas");
+    const mCtx = measureCanvas.getContext("2d")!;
+    
+    // Pre-load images
+    let logoImg: HTMLImageElement | null = null;
+    try { logoImg = await loadImage("/images/logo-removebg-preview.png"); } catch (_) {}
+    
+    let batikImg: HTMLImageElement | null = null;
+    try { batikImg = await loadImage("/images/Elemen Frame Kanan Atas.png"); } catch (_) {}
+
+    let avatarImg: HTMLImageElement | null = null;
+    const avatarUrl = profile?.avatar || PROFESSION_AVATARS[profKey] || null;
+    if (avatarUrl) {
+      try { avatarImg = await loadImage(avatarUrl); } catch (_) {}
+    }
+
+    // ── Layout pass ──
+    mCtx.font = "bold 12px Arial, sans-serif";
+    const cardsData = filledItems.map((item, i) => {
+      const isLeft = i % 2 === 0;
+      const cardW = INNER_W * 0.88;
+      const cardX = isLeft ? PADDING + 10 : W - PADDING - 10 - cardW;
+      const titleLines = wrapText(mCtx, item.title, cardW - 74 - 12);
+      const textBlockH = titleLines.length * 15 + 12;
+      const cardH = Math.max(58, textBlockH + 20);
+      return { item, isLeft, cardW, cardX, titleLines, textBlockH, cardH };
+    });
+
+    let y = 26;
+
+    let actualLogoW = 80;
+    let actualLogoH = 28;
+    if (logoImg) {
+      actualLogoH = 80 * (logoImg.height / logoImg.width);
+    }
+    
+    const logoY = y;
+    y += actualLogoH + 4; // Logo + margin
+
+    const subtitleY = y;
+    y += 11 + 22; // Subtitle + margin
+
+    const profCardY = y;
+    const profCardH = 80;
+    y += profCardH + 24;
+
+    const trackTop = y + 10;
+    const cardsStartY = y;
+    const totalCardsH = cardsData.reduce((sum, c) => sum + c.cardH + 14, 0);
+    const lastCardY = totalCardsH > 0 ? y + totalCardsH - cardsData[cardsData.length - 1].cardH - 14 : y;
+    const trackBottom = totalCardsH > 0 ? lastCardY + cardsData[cardsData.length - 1].cardH / 2 : y;
+    y += totalCardsH + 10;
+
+    const dividerY = y;
+    y += 16;
+
+    const xpLabelY = y;
+    y += 18;
+    const xpValueY = y;
+    y += 40;
+
+    mCtx.font = "italic 12px Georgia, serif";
+    const quoteLines = wrapText(mCtx, `"Setiap langkah kecil membawamu lebih dekat ke cita-cita!"`, INNER_W);
+    const quoteY = y;
+    y += quoteLines.length * 18 + 26;
+    
+    const finalH = y;
+
+    // ── Drawing pass ──
+    const canvas = document.createElement("canvas");
+    canvas.width = W * SCALE;
+    canvas.height = finalH * SCALE;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(SCALE, SCALE);
+
+    // 1. Clip for transparent rounded corners
+    ctx.beginPath();
+    roundRect(ctx, 0, 0, W, finalH, 22);
+    ctx.clip();
+
+    // 2. Background
+    const bg = ctx.createLinearGradient(0, 0, 0, finalH);
+    bg.addColorStop(0, "#242058");
+    bg.addColorStop(0.6, "#1B1A3E");
+    bg.addColorStop(1, "#17153A");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, finalH);
+
+    // 3. Batik
+    if (batikImg) {
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.drawImage(batikImg, W - 148, -12, 160, 160); // TR
+      ctx.translate(148, finalH - 148); // BL origin
+      ctx.scale(-1, -1);
+      ctx.drawImage(batikImg, 0, 0, 160, 160);
+      ctx.restore();
+    }
+
+    // 4. Border
+    ctx.strokeStyle = "#3B366E";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    roundRect(ctx, 0.5, 0.5, W - 1, finalH - 1, 22);
+    ctx.stroke();
+
+    // 5. Logo
+    if (logoImg) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetY = 2;
+      ctx.drawImage(logoImg, (W - actualLogoW) / 2, logoY, actualLogoW, actualLogoH);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#F9CA75";
+      ctx.font = "bold 16px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("VICORE", W / 2, logoY + 14);
+    }
+
+    // 6. Subtitle
+    ctx.fillStyle = "#B6B2DA";
+    ctx.font = "bold 11px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("PETA RENCANA KARIER", W / 2, subtitleY + 11);
+
+    // 7. Profile Card
+    roundRectFill(ctx, PADDING, profCardY, INNER_W, profCardH, 16, "rgba(242,169,59,0.08)");
+    ctx.strokeStyle = "rgba(242,169,59,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    roundRect(ctx, PADDING, profCardY, INNER_W, profCardH, 16);
+    ctx.stroke();
+
+    if (avatarImg) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, PADDING + 14, profCardY + 14, 52, 52, 14);
+      ctx.clip();
+      ctx.drawImage(avatarImg, PADDING + 14, profCardY + 14, 52, 52);
+      ctx.restore();
+    }
+    
+    const textX = PADDING + 14 + 52 + 12;
+    ctx.fillStyle = "#B6B2DA";
+    ctx.font = "600 11px Arial, sans-serif";
+    ctx.textAlign = "left";
+    if (profile) ctx.fillText(`${profile.name} · ${profile.grade}`, textX, profCardY + 22);
+    ctx.fillText("Cita-citaku", textX, profCardY + 37);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 17px Georgia, serif";
+    ctx.fillText(prof.name, textX, profCardY + 56);
+
+    // 8. Track Line
+    if (totalCardsH > 0) {
+      ctx.strokeStyle = "rgba(242,169,59,0.35)";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(W / 2, trackTop);
+      ctx.lineTo(W / 2, trackBottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 9. Activity Cards
+    let currCardY = cardsStartY;
+    for (let i = 0; i < cardsData.length; i++) {
+      const { item, isLeft, cardW, cardX, titleLines, textBlockH, cardH } = cardsData[i];
+
+      roundRectFill(ctx, cardX, currCardY, cardW, cardH, 14, "#242058");
+      ctx.strokeStyle = "#3B366E";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      roundRect(ctx, cardX, currCardY, cardW, cardH, 14);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(242,169,59,0.35)";
+      if (isLeft) {
+        ctx.fillRect(cardX + cardW, currCardY + cardH / 2 - 1, 12, 2);
+      } else {
+        ctx.fillRect(cardX - 12, currCardY + cardH / 2 - 1, 12, 2);
+      }
+
+      const cx = cardX + 23;
+      const cy = currCardY + cardH / 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+      ctx.fillStyle = "#0F0E24";
+      ctx.fill();
+      ctx.strokeStyle = "#F2A93B";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#F9CA75";
+      ctx.font = "bold 11px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(i + 1), cx, cy + 1);
+
+      ctx.font = "18px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(item.icon, cardX + 54, cy);
+
+      const startY = cy - textBlockH / 2;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      titleLines.forEach((line, li) => {
+        ctx.fillText(line, cardX + 74, startY + li * 15);
       });
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          alert("Gagal memproses gambar untuk dibagikan.");
-          return;
-        }
-        const file = new File([blob], `VCORE_Rencana_Karier_${profile?.name ?? "Petualang"}.png`, { type: "image/png" });
+      ctx.fillStyle = "#B6B2DA";
+      ctx.font = "9.5px Arial, sans-serif";
+      ctx.textBaseline = "top";
+      ctx.fillText(`+${item.xp} XP`, cardX + 74, startY + titleLines.length * 15 + 2);
 
-        // Web Share API File Share Support
+      currCardY += cardH + 14;
+    }
+
+    // 10. Footer
+    ctx.strokeStyle = "#3B366E";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PADDING, dividerY);
+    ctx.lineTo(W - PADDING, dividerY);
+    ctx.stroke();
+
+    ctx.fillStyle = "#B6B2DA";
+    ctx.font = "bold 10.5px Arial, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("TOTAL XP", PADDING, xpLabelY);
+
+    ctx.fillStyle = "#F9CA75";
+    ctx.font = "bold 26px Georgia, serif";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(String(totalXp), PADDING, xpValueY + 26); // baseline adjustment for Georgia
+
+    const level = getLevel(totalXp);
+    ctx.fillStyle = "rgba(242,169,59,0.08)";
+    const badgeW = 110;
+    const badgeH = 28;
+    roundRectFill(ctx, W - PADDING - badgeW, xpValueY, badgeW, badgeH, 6, "rgba(242,169,59,0.08)");
+    ctx.strokeStyle = "rgba(242,169,59,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    roundRect(ctx, W - PADDING - badgeW, xpValueY, badgeW, badgeH, 6);
+    ctx.stroke();
+    
+    ctx.fillStyle = "#F9CA75";
+    ctx.font = "bold 12px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(level, W - PADDING - badgeW / 2, xpValueY + badgeH / 2);
+
+    ctx.fillStyle = "#B6B2DA";
+    ctx.font = "italic 12px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    quoteLines.forEach((line, li) => {
+      ctx.fillText(line, W / 2, quoteY + li * 18);
+    });
+
+    return canvas;
+  };
+
+  // Helper: load an image as HTMLImageElement
+  const loadImage = (src: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  // Helper: wrap text to fit maxWidth, returns array of lines
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  };
+
+  // Helper: draw rounded rect path
+  const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
+
+  // Helper: fill rounded rect
+  const roundRectFill = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, color: string) => {
+    roundRect(ctx, x, y, w, h, r);
+    ctx.fillStyle = color;
+    ctx.fill();
+  };
+
+  const handleShare = async () => {
+    try {
+      const canvas = await drawPosterToCanvas();
+      canvas.toBlob(async (blob) => {
+        if (!blob) { alert("Gagal memproses gambar."); return; }
+        const file = new File([blob], `VCORE_Rencana_Karier_${profile?.name ?? "Petualang"}.png`, { type: "image/png" });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -665,7 +989,6 @@ function ResultModal({
             console.log("Share failed or cancelled:", shareErr);
           }
         } else {
-          // Fallback to direct download
           const dataUrl = canvas.toDataURL("image/png");
           const link = document.createElement("a");
           link.download = `VCORE_Rencana_Karier_${profile?.name ?? "Petualang"}.png`;
@@ -681,15 +1004,8 @@ function ResultModal({
   };
 
   const handleDownloadOnly = async () => {
-    if (!posterRef.current) return;
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(posterRef.current, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: "#1B1A3E",
-        logging: false,
-      });
+      const canvas = await drawPosterToCanvas();
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.download = `VCORE_Rencana_Karier_${profile?.name ?? "Petualang"}.png`;
@@ -857,63 +1173,55 @@ function ResultModal({
                       background: "rgba(242,169,59,0.35)",
                     }} />
 
-                    {/* Stable structure using CSS Table layout for robust html2canvas rendering */}
-                    <div style={{ display: "table", width: "100%", tableLayout: "fixed", boxSizing: "border-box" }}>
+                    {/* Card content row — uses CSS table for vertical centering, with overflow-hidden block wrappers inside cells to clip html2canvas emoji overflow */}
+                    <div style={{ display: "table", width: "100%", boxSizing: "border-box" }}>
                       {/* Step Number Circle cell */}
-                      <div style={{ display: "table-cell", verticalAlign: "middle", width: 22, boxSizing: "border-box" }}>
+                      <div style={{ display: "table-cell", verticalAlign: "middle", width: 22 }}>
                         <div style={{
-                          position: "relative",
                           width: 22,
                           height: 22,
                           borderRadius: "50%",
                           background: "#0F0E24",
                           border: "2px solid #F2A93B",
-                          boxSizing: "border-box",
+                          overflow: "hidden",
+                          textAlign: "center",
+                          lineHeight: "18px",
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: "#F9CA75",
                         }}>
-                          <span style={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            fontSize: 11,
-                            fontWeight: 800,
-                            color: "#F9CA75",
-                            lineHeight: 1,
-                            whiteSpace: "nowrap",
-                          }}>
-                            {i + 1}
-                          </span>
+                          {i + 1}
                         </div>
                       </div>
 
-                      {/* Spacer cell */}
+                      {/* Spacer */}
                       <div style={{ display: "table-cell", width: 8 }} />
 
-                      {/* Icon cell */}
-                      <div style={{
-                        display: "table-cell",
-                        verticalAlign: "middle",
-                        width: 24,
-                        fontSize: 20,
-                        lineHeight: 1,
-                        textAlign: "center",
-                        boxSizing: "border-box",
-                      }}>
-                        {item.icon}
+                      {/* Icon cell — inner block clips oversized html2canvas emoji renders */}
+                      <div style={{ display: "table-cell", verticalAlign: "middle", width: 24 }}>
+                        <div style={{
+                          width: 22,
+                          height: 22,
+                          overflow: "hidden",
+                          textAlign: "center",
+                          lineHeight: "22px",
+                          fontSize: 16,
+                        }}>
+                          {item.icon}
+                        </div>
                       </div>
 
-                      {/* Spacer cell */}
+                      {/* Spacer */}
                       <div style={{ display: "table-cell", width: 8 }} />
 
                       {/* Content text cell */}
-                      <div style={{ display: "table-cell", verticalAlign: "middle", boxSizing: "border-box" }}>
+                      <div style={{ display: "table-cell", verticalAlign: "middle" }}>
                         <p style={{
                           fontSize: 12,
                           fontWeight: 700,
                           margin: 0,
                           color: "#fff",
                           lineHeight: 1.3,
-                          whiteSpace: "normal"
                         }}>
                           {item.title}
                         </p>
@@ -970,7 +1278,7 @@ function ResultModal({
         {/* 1. Visible Poster Card (for UI rendering on modal) */}
         {renderPosterContent(false)}
 
-        {/* 2. Hidden Poster Card (absolute off-screen with fixed width for html2canvas export) */}
+        {/* 2. Hidden Poster Card (absolute off-screen with fixed width for image export) */}
         <div
           ref={posterRef}
           style={{
@@ -1040,6 +1348,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
   // Resolve profession key from job name passed by JobSelectQuiz
   const initialKey = JOB_KEY_MAP[job] ?? Object.keys(DATA)[0];
   const [currentProf, setCurrentProf] = useState<string>(initialKey);
+  const [dbProf, setDbProf] = useState<ProfessionData | null>(null);
   const [placed, setPlaced] = useState<Record<number, string | null>>(
     () => Object.fromEntries(Array.from({ length: SLOT_COUNT }, (_, i) => [i, null])) as Record<number, string | null>
   );
@@ -1047,6 +1356,35 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
   const [showModal, setShowModal] = useState(false);
   const [guideStep, setGuideStep] = useState<number>(0);
   const [guideVisible, setGuideVisible] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load from Supabase on mount/change
+  useEffect(() => {
+    async function loadData() {
+      const { data, error } = await supabase
+        .from("professions")
+        .select("*, activities(*)")
+        .eq("slug", currentProf)
+        .single();
+      
+      if (data) {
+        setDbProf({
+          id: data.id,
+          name: data.name,
+          icon: data.icon,
+          image: data.image_url,
+          activities: data.activities.map((a: any) => ({
+            id: a.id,
+            title: a.title,
+            cat: a.category,
+            icon: a.icon,
+            xp: a.xp,
+          }))
+        });
+      }
+    }
+    loadData();
+  }, [currentProf]);
 
   // Refs for guide targets
   const xpRef = useRef<HTMLDivElement>(null);
@@ -1068,7 +1406,7 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
     offsetX: number; offsetY: number;
   } | null>(null);
 
-  const prof = DATA[currentProf];
+  const prof = dbProf || DATA[currentProf];
   const usedIds = Object.values(placed).filter(Boolean) as string[];
   const poolItems = prof.activities.filter((a) => !usedIds.includes(a.id));
 
@@ -1277,6 +1615,71 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
   const goldLight = "#F9CA75";
   const goldDark = "#C97F1E";
   const muted = "#B6B2DA";
+
+  /* ─── Supabase Save Handler ────────────────────────────── */
+  const handleSaveAndFinish = async () => {
+    if (isSaving) return;
+    
+    // We can only save if we loaded the DB data (meaning prof.id exists)
+    // and if the user provided a profile.
+    if (!profile || !prof.id) {
+      onFinish();
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      // 1. Resolve student ID
+      let studentId = profile.id;
+
+      if (!studentId) {
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .insert({
+            name: profile.name,
+            age: profile.age,
+            grade: profile.grade,
+            avatar_url: profile.avatar || PROFESSION_AVATARS[currentProf] || null,
+          })
+          .select('id')
+          .single();
+
+        if (studentError) throw studentError;
+        studentId = studentData.id;
+      }
+
+      // 2. Insert plan
+      const { data: planData, error: planError } = await supabase
+        .from('student_plans')
+        .insert({
+          student_id: studentId,
+          profession_id: prof.id,
+          total_xp: totalXp,
+        })
+        .select('id')
+        .single();
+        
+      if (planError) throw planError;
+      
+      // 3. Insert chosen activities
+      const activitiesToInsert = usedIds.map((id, index) => ({
+        plan_id: planData.id,
+        activity_id: id,
+        slot_index: index,
+      }));
+      
+      if (activitiesToInsert.length > 0) {
+        const { error: actError } = await supabase.from('student_plan_activities').insert(activitiesToInsert);
+        if (actError) throw actError;
+      }
+      
+    } catch (err) {
+      console.error("Failed to save plan to DB:", err);
+    } finally {
+      setIsSaving(false);
+      onFinish();
+    }
+  };
 
   return (
     <>
@@ -1576,11 +1979,12 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
       {showModal && (
         <ResultModal
           profKey={currentProf}
+          profession={prof}
           placed={placed}
           profile={profile}
           totalXp={totalXp}
           onClose={() => setShowModal(false)}
-          onFinish={onFinish}
+          onFinish={handleSaveAndFinish}
         />
       )}
       {/* ── Onboarding Guide ── */}
