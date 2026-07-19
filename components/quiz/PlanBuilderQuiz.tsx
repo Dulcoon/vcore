@@ -1096,6 +1096,61 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
 
   /* ── Pointer drag logic (Long-Press / Hold-to-drag UX) ── */
 
+  /** Always-safe cleanup: removes ghost, resets card opacity, clears drag state */
+  const cleanupDrag = useCallback((placeAtPoint?: { x: number; y: number }) => {
+    const d = dragRef.current;
+    if (!d) return;
+
+    if (d.timer) clearTimeout(d.timer);
+    d.card.style.opacity = "";
+
+    if (d.isActivated && d.ghost) {
+      if (placeAtPoint) {
+        const el = document.elementFromPoint(placeAtPoint.x, placeAtPoint.y);
+        const slot = el?.closest("[data-slot-empty]") as HTMLElement | null;
+        if (slot) {
+          const idx = parseInt(slot.getAttribute("data-slot-idx") ?? "-1", 10);
+          if (idx >= 0) placeItem(d.id, idx);
+        }
+      }
+      try { d.ghost.remove(); } catch (_) {}
+      document.querySelectorAll("[data-drag-over]").forEach((el) => el.removeAttribute("data-drag-over"));
+    }
+
+    dragRef.current = null;
+  }, [placeItem]);
+
+  // Safety net: on unmount, clean up any leftover ghost
+  useEffect(() => {
+    return () => {
+      const d = dragRef.current;
+      if (d?.ghost) { try { d.ghost.remove(); } catch (_) {} }
+      if (d?.timer) clearTimeout(d.timer);
+    };
+  }, []);
+
+  // Global fallback: if the pointer is released or cancelled outside the pool area
+  // (e.g. the user lifts their finger over a slot or outside the component),
+  // the ghost must be removed. We attach to document on pointerup/pointercancel.
+  useEffect(() => {
+    const handleGlobalUp = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || !d.isActivated) return;
+      cleanupDrag({ x: e.clientX, y: e.clientY });
+    };
+    const handleGlobalCancel = () => {
+      const d = dragRef.current;
+      if (!d) return;
+      cleanupDrag();
+    };
+    document.addEventListener("pointerup", handleGlobalUp);
+    document.addEventListener("pointercancel", handleGlobalCancel);
+    return () => {
+      document.removeEventListener("pointerup", handleGlobalUp);
+      document.removeEventListener("pointercancel", handleGlobalCancel);
+    };
+  }, [cleanupDrag]);
+
   const onPoolPointerDown = (e: React.PointerEvent<HTMLDivElement>, id: string) => {
     const card = e.currentTarget;
     const startX = e.clientX;
@@ -1178,23 +1233,16 @@ export default function PlanBuilderQuiz({ job, profile, onFinish, onBack }: Prop
     const d = dragRef.current;
     if (!d) return;
 
-    if (d.timer) clearTimeout(d.timer);
-    d.card.style.opacity = "";
-
-    if (d.isActivated && d.ghost) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const slot = el?.closest("[data-slot-empty]") as HTMLElement | null;
-      if (slot) {
-        const idx = parseInt(slot.getAttribute("data-slot-idx") ?? "-1", 10);
-        if (idx >= 0) placeItem(d.id, idx);
-      }
-      d.ghost.remove();
-      document.querySelectorAll("[data-drag-over]").forEach((el) => el.removeAttribute("data-drag-over"));
-    } else if (!d.moved && !d.isActivated) {
+    // If drag was not yet activated (timer still pending) and no significant movement -> treat as tap
+    if (!d.isActivated && !d.moved) {
+      if (d.timer) clearTimeout(d.timer);
+      d.card.style.opacity = "";
       toggleSelect(d.id);
+      dragRef.current = null;
+      return;
     }
 
-    dragRef.current = null;
+    cleanupDrag({ x: e.clientX, y: e.clientY });
   };
 
   /* ── Sections ── */
