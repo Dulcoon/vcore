@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import PlanImageGenerator from "./PlanImageGenerator";
+import BackButton from "@/components/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -13,24 +14,41 @@ export default async function StudentDetailPage({
 }) {
   const { id } = await params;
 
-  // Fetch student data with plan
-  const { data: student, error: studentErr } = await supabase
-    .from("students")
-    .select(`
-      *,
-      student_plans(
-        id, 
-        total_xp,
-        professions(name, icon),
-        student_plan_activities(
-          id,
-          slot_index,
-          activities(title, category, xp, icon)
+  // Fetch student data with plan and all quiz results
+  const [studentRes, quizRes, saRes] = await Promise.all([
+    supabase
+      .from("students")
+      .select(`
+        *,
+        student_plans(
+          id, 
+          total_xp,
+          professions(name, icon),
+          student_plan_activities(
+            id,
+            slot_index,
+            activities(title, category, xp, icon)
+          )
         )
-      )
-    `)
-    .eq("id", id)
-    .single();
+      `)
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("student_quiz_results")
+      .select("*, professions(name, icon)")
+      .eq("student_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("student_self_appraisal_results")
+      .select("*")
+      .eq("student_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const student = studentRes.data;
+  const studentErr = studentRes.error;
+  const quizResults = quizRes.data || [];
+  const selfAppraisalResults = saRes.data || [];
 
   if (studentErr || !student) {
     console.error("Student detail fetch error:", studentErr);
@@ -44,12 +62,7 @@ export default async function StudentDetailPage({
     <div className="space-y-6">
       {/* Back Button */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <Link 
-          href="/admin" 
-          className="inline-flex items-center text-[#B6B2DA] hover:text-[#F9CA75] transition-colors"
-        >
-          <span className="mr-2">←</span> Kembali ke Dashboard
-        </Link>
+        <BackButton href="/admin" label="Kembali ke Dashboard" />
         {plan && (
           <PlanImageGenerator
             studentName={student.name}
@@ -80,7 +93,7 @@ export default async function StudentDetailPage({
         </div>
         <div className="flex-1">
           <h2 className="text-3xl font-bold font-serif text-[#F9CA75]">{student.name}</h2>
-          <div className="flex gap-4 mt-2 text-[#B6B2DA]">
+          <div className="flex gap-4 mt-2 text-[#B6B2DA] text-sm">
             <p>Usia: <span className="text-white font-semibold">{student.age}</span></p>
             <p>Kelas: <span className="text-white font-semibold">{student.grade}</span></p>
           </div>
@@ -114,7 +127,7 @@ export default async function StudentDetailPage({
           
           <div className="p-6">
             {!plan.student_plan_activities || plan.student_plan_activities.length === 0 ? (
-              <p className="text-[#B6B2DA] text-center py-4">Belum ada aktivitas yang dipilih.</p>
+              <p className="text-[#B6B2DA] text-center py-4 text-sm">Belum ada aktivitas yang dipilih.</p>
             ) : (
               <div className="space-y-3">
                 {plan.student_plan_activities.map((item: any) => {
@@ -144,6 +157,88 @@ export default async function StudentDetailPage({
           </div>
         </div>
       )}
+
+      {/* Grid: Self Appraisal Results & Problem Solving Quiz Results */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Self Appraisal Results */}
+        <div className="bg-[#1B1A3E]/80 backdrop-blur-md border border-[#3B366E] rounded-2xl overflow-hidden shadow-lg">
+          <div className="px-6 py-4 border-b border-[#3B366E] bg-[#242058]/30 flex justify-between items-center">
+            <h3 className="font-bold text-white text-base sm:text-lg">Hasil Evaluasi Diri (Self-Appraisal)</h3>
+            <span className="text-xs text-[#B6B2DA]">Total: {selfAppraisalResults.length}</span>
+          </div>
+
+          <div className="p-6">
+            {selfAppraisalResults.length === 0 ? (
+              <p className="text-[#B6B2DA] text-center py-4 text-sm">Siswa ini belum mengerjakan Evaluasi Diri.</p>
+            ) : (
+              <div className="space-y-3">
+                {selfAppraisalResults.map((sa: any) => (
+                  <div key={sa.id} className="bg-[#242058]/40 border border-[#3B366E] rounded-xl p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">Respon Positif (&lsquo;Iya&rsquo;)</h4>
+                      <p className="text-xs text-[#B6B2DA] mt-0.5">
+                        Dikerjakan: {new Date(sa.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[#F9CA75] font-extrabold text-base sm:text-lg">
+                        {sa.yes_count} / {sa.total_questions} <span className="text-xs font-normal text-[#B6B2DA]">Pertanyaan</span>
+                      </div>
+                      <div className="text-xs text-green-400 font-semibold">Tersimpan</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Problem Solving Quiz Results */}
+        <div className="bg-[#1B1A3E]/80 backdrop-blur-md border border-[#3B366E] rounded-2xl overflow-hidden shadow-lg">
+          <div className="px-6 py-4 border-b border-[#3B366E] bg-[#242058]/30 flex justify-between items-center">
+            <h3 className="font-bold text-white text-base sm:text-lg">Hasil Kuis Problem-Solving</h3>
+            <span className="text-xs text-[#B6B2DA]">Total: {quizResults.length}</span>
+          </div>
+
+          <div className="p-6">
+            {quizResults.length === 0 ? (
+              <p className="text-[#B6B2DA] text-center py-4 text-sm">Siswa ini belum mengerjakan Kuis Problem-Solving.</p>
+            ) : (
+              <div className="space-y-3">
+                {quizResults.map((qr: any) => {
+                  const pName = qr.professions?.name || "Profesi Pilihan";
+                  const pIcon = qr.professions?.icon || "🎯";
+                  const scorePercent = qr.max_score > 0 ? Math.round((qr.score / qr.max_score) * 100) : 0;
+
+                  return (
+                    <div key={qr.id} className="bg-[#242058]/40 border border-[#3B366E] rounded-xl p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl w-10 h-10 rounded-full bg-[#0F0E24] flex items-center justify-center border border-[#3B366E]">
+                          {pIcon}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white text-sm">{pName}</h4>
+                          <p className="text-xs text-[#B6B2DA]">
+                            Dikerjakan: {new Date(qr.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-[#F9CA75] font-extrabold text-base sm:text-lg">
+                          {qr.score} / {qr.max_score} <span className="text-xs font-normal text-[#B6B2DA]">({scorePercent}%)</span>
+                        </div>
+                        <div className="text-xs text-green-400 font-semibold">Tersimpan</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

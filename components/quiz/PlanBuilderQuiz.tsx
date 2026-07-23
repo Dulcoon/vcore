@@ -1319,11 +1319,11 @@ function ResultModal({
           </button>
 
           <button
-            onClick={onFinish} // Exits the quiz to homepage
-            className="flex-1 text-center border border-white/15 bg-[#E29D29]/10 hover:bg-[#E29D29]/20 text-[#F9CA75] border-[#E29D29]/30 font-bold text-sm px-3 py-3.5 rounded-full transition-all active:scale-95"
+            onClick={onFinish} // Proceeds to Problem Solving Quiz
+            className="flex-1 text-center border bg-gradient-to-r from-[#E29D29] to-[#F2AE3A] hover:from-[#F2AE3A] hover:to-[#F9CA75] text-white font-extrabold text-xs sm:text-sm px-3 py-3.5 rounded-full shadow-[0_4px_15px_rgba(226,157,41,0.3)] transition-all active:scale-95 border-yellow-500/20"
             style={{ fontFamily: "var(--font-plus-jakarta)" }}
           >
-            Selesai
+            Lanjut Kuis Problem Solving &rarr;
           </button>
         </div>
 

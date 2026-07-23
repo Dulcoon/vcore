@@ -79,20 +79,22 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {/* Floating Navigator Indicators at the bottom */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-3 items-center bg-black/40 px-4 py-2.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <button
-            key={i}
-            onClick={() => setStep(i)}
-            className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${i === step
-              ? "bg-[#E29D29] scale-125 shadow-[0_0_12px_rgba(226,157,41,0.6)]"
-              : "bg-white/20 hover:bg-white/40"
-              }`}
-            aria-label={`Slide ${i}`}
-          />
-        ))}
-      </div>
+      {/* Floating Navigator Indicators at the bottom (only shown on steps 1-3) */}
+      {step <= 3 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-3 items-center bg-black/40 px-4 py-2.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg">
+          {[1, 2, 3].map((i) => (
+            <button
+              key={i}
+              onClick={() => setStep(i)}
+              className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${i === step
+                ? "bg-[#E29D29] scale-125 shadow-[0_0_12px_rgba(226,157,41,0.6)]"
+                : "bg-white/20 hover:bg-white/40"
+                }`}
+              aria-label={`Slide ${i}`}
+            />
+          ))}
+        </div>
+      )}
     </main>
   );
 }

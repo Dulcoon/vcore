@@ -7,6 +7,7 @@ import Logo from "../Logo";
 
 interface StepProps {
   onSelect: (jobName: string) => void;
+  onBack?: () => void;
 }
 
 const jobs = [
@@ -54,7 +55,7 @@ const jobs = [
   },
 ];
 
-export default function JobSelectQuiz({ onSelect }: StepProps) {
+export default function JobSelectQuiz({ onSelect, onBack }: StepProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -105,6 +106,19 @@ export default function JobSelectQuiz({ onSelect }: StepProps) {
       <BatikOrnament position="top-right" />
       <BatikOrnament position="bottom-left" />
       <BatikOrnament position="bottom-right" />
+
+      {/* Optional Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 sm:top-6 sm:left-8 z-30 px-4 py-2 bg-[#1c1e4c]/80 hover:bg-[#2A2D6C] text-[#B6B2DA] hover:text-white rounded-full border border-[#E29D29]/30 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Kembali</span>
+        </button>
+      )}
 
       {/* Institution logos bar at the top */}
       <div className="z-10 w-full mt-2">

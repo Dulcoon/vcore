@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import Modal from "@/components/admin/Modal";
+import BackButton from "@/components/BackButton";
 import { createActivity, updateActivity, deleteActivity } from "./actions";
 
 type Activity = {
@@ -80,9 +80,7 @@ export default function ActivityClient({
   return (
     <>
       <div className="mb-4">
-        <Link href="/admin/professions" className="text-sm font-semibold text-[#B6B2DA] hover:text-white transition-colors">
-          &larr; Kembali ke Profesi
-        </Link>
+        <BackButton href="/admin/professions" label="Kembali ke Profesi" />
       </div>
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">

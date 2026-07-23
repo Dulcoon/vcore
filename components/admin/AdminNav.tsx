@@ -10,6 +10,7 @@ export default function AdminNav() {
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/students", label: "Data Siswa" },
     { href: "/admin/professions", label: "Data Profesi" },
+    { href: "/admin/quizzes", label: "Kelola Quiz" },
   ];
 
   return (

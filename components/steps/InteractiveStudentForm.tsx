@@ -5,18 +5,14 @@ import { supabase } from "@/lib/supabase";
 
 interface InteractiveFormProps {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-const ages = ["6", "7", "8", "9", "10", "11", "12", "13", "14", "15+"];
+const ages = ["15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"];
 const grades = [
-  { id: "1_sd", label: "Kelas 1 SD" },
-  { id: "2_sd", label: "Kelas 2 SD" },
-  { id: "3_sd", label: "Kelas 3 SD" },
-  { id: "4_sd", label: "Kelas 4 SD" },
-  { id: "5_sd", label: "Kelas 5 SD" },
-  { id: "6_sd", label: "Kelas 6 SD" },
-  { id: "smp", label: "SMP / Sederajat" },
-  { id: "sma_umum", label: "SMA / Umum" },
+  { id: "10_sma", label: "Kelas 10 SMA" },
+  { id: "11_sma", label: "Kelas 11 SMA" },
+  { id: "12_sma", label: "Kelas 12 SMA" },
 ];
 
 const avatars = [
@@ -58,7 +54,7 @@ const avatars = [
   },
 ];
 
-export default function InteractiveStudentForm({ onComplete }: InteractiveFormProps) {
+export default function InteractiveStudentForm({ onComplete, onBack }: InteractiveFormProps) {
   const [formStep, setFormStep] = useState(0);
   const [name, setName] = useState("");
   const [selectedAge, setSelectedAge] = useState("");
@@ -123,24 +119,19 @@ export default function InteractiveStudentForm({ onComplete }: InteractiveFormPr
       }
 
       setIsSuccess(true);
-      setTimeout(() => {
-        onComplete();
-      }, 1250);
     }
   };
 
   const handlePrevStep = () => {
     if (formStep > 0) {
       setFormStep(formStep - 1);
+    } else if (onBack) {
+      onBack();
     }
   };
 
   const selectAge = (age: string) => {
     setSelectedAge(age);
-    // Auto-advance with a minor delay for tactile responsiveness
-    setTimeout(() => {
-      setFormStep(2);
-    }, 350);
   };
 
   return (
@@ -153,20 +144,32 @@ export default function InteractiveStudentForm({ onComplete }: InteractiveFormPr
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex-1 flex flex-col items-center justify-center text-center z-10 py-10"
+          className="flex-1 flex flex-col items-center justify-center text-center z-10 py-6"
         >
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 10 }}
-            className="w-20 h-20 bg-[#E29D29] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(226,157,41,0.5)] mb-6"
+            className="w-20 h-20 bg-[#E29D29] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(226,157,41,0.5)] mb-4"
           >
             <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           </motion.div>
-          <h3 className="text-white text-xl font-bold font-serif mb-2">Profil Berhasil Dibuat!</h3>
-          <p className="text-white/60 text-xs sm:text-sm">Mari bersiap melakukan petualangan VR kamu!</p>
+          <h3 className="text-white text-xl sm:text-2xl font-bold font-serif mb-2">Profil Berhasil Dibuat!</h3>
+          <p className="text-white/70 text-xs sm:text-sm max-w-xs mb-6">Halo Petualang! Profilmu sudah tersimpan. Siap mengikuti kuis pertama?</p>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onComplete}
+            className="bg-[#E29D29] hover:bg-[#F2AE3A] text-white font-extrabold text-xs sm:text-sm px-8 py-3.5 rounded-full shadow-[0_4px_20px_rgba(226,157,41,0.5)] tracking-wider uppercase transition-all flex items-center gap-2 border border-yellow-500/30 cursor-pointer"
+          >
+            Mulai Quiz
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </motion.button>
         </motion.div>
       ) : (
         /* Form Wizard */
@@ -177,7 +180,7 @@ export default function InteractiveStudentForm({ onComplete }: InteractiveFormPr
             <button
               onClick={handlePrevStep}
               className={`p-2 rounded-full border border-white/10 text-white/50 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${
-                formStep === 0 ? "opacity-0 pointer-events-none" : "opacity-100"
+                formStep === 0 && !onBack ? "opacity-0 pointer-events-none" : "opacity-100 cursor-pointer"
               }`}
               aria-label="Back"
             >
@@ -225,10 +228,15 @@ export default function InteractiveStudentForm({ onComplete }: InteractiveFormPr
                   transition={{ duration: 0.35, ease: "easeInOut" }}
                   className="flex flex-col items-center"
                 >
-                  <h4 className="text-white text-lg sm:text-xl font-bold font-serif mb-2 text-center">
-                    Halo petualang! Siapa namamu?
-                  </h4>
-                  <p className="text-white/40 text-xxs sm:text-xs mb-6 text-center">
+                  <div className="flex flex-col items-center mb-4">
+                    <span className="bg-[#E29D29]/20 text-[#F9CA75] border border-[#E29D29]/40 text-[10px] sm:text-xs font-extrabold tracking-widest px-3.5 py-1 rounded-full uppercase mb-2">
+                      Ayo Kenalan! 👋
+                    </span>
+                    <h4 className="text-white text-lg sm:text-xl font-bold font-serif text-center">
+                      Siapa namamu?
+                    </h4>
+                  </div>
+                  <p className="text-white/50 text-xs mb-6 text-center max-w-xs">
                     Tulis nama panggilan atau nama lengkapmu di sini
                   </p>
                   

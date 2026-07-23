@@ -8,51 +8,78 @@ import Image from "next/image";
 import InteractiveStudentForm from "./InteractiveStudentForm";
 
 interface StepProps {
-  onNext: () => void;
+  onNext?: () => void;
 }
 
 export default function QuizIntroStep({ onNext }: StepProps) {
-  const [showForm, setShowForm] = useState(false);
+  const [phase, setPhase] = useState<"form" | "quiz-intro">("form");
   const router = useRouter();
 
   return (
-    <div className="w-full h-full relative flex flex-col justify-between items-center pt-10 pb-24 px-8 bg-gradient-to-b from-[#1E2258] to-[#121438] select-none">
+    <div className="w-full h-full relative flex flex-col justify-between items-center pt-8 pb-20 px-4 sm:px-8 bg-gradient-to-b from-[#1E2258] to-[#121438] select-none">
       {/* Batik Ornaments in corners */}
       <BatikOrnament position="top-left" />
       <BatikOrnament position="top-right" />
       <BatikOrnament position="bottom-left" />
       <BatikOrnament position="bottom-right" />
 
-      {/* Institution logos bar at the top */}
-      <div className="z-10 w-full mt-2">
+      {/* Institution logos bar at top */}
+      <div className="z-10 w-full max-w-4xl mt-2">
         <HeaderLogos />
       </div>
 
       {/* Content Area */}
-      <div className="z-10 w-full flex-1 flex flex-col items-center justify-center max-w-4xl px-4 py-4">
+      <div className="z-10 w-full flex-1 flex flex-col items-center justify-center max-w-4xl px-2 py-4">
         <AnimatePresence mode="wait">
-          {!showForm ? (
-            /* VR Decision Screen */
+          {phase === "form" ? (
+            /* Phase 1: Interactive Data Collection Form ("Ayo Kenalan!") */
             <motion.div
-              key="intro"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-col items-center w-full"
+              key="form-phase"
+              initial={{ opacity: 0, scale: 0.97, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: -15 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="w-full flex flex-col items-center justify-center"
             >
+              <Logo className="w-28 sm:w-36 mb-3" />
+              <InteractiveStudentForm
+                onComplete={() => setPhase("quiz-intro")}
+                onBack={onNext}
+              />
+            </motion.div>
+          ) : (
+            /* Phase 2: Quiz Intro Screen ("Yuk cari tahu apa kelebihan dan kekuranganmu!") */
+            <motion.div
+              key="quiz-intro-phase"
+              initial={{ opacity: 0, scale: 0.97, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: -15 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col items-center w-full max-w-xl text-center relative"
+            >
+              {/* Back Button to return to Form */}
+              <button
+                onClick={() => setPhase("form")}
+                className="self-start mb-3 px-4 py-2 bg-[#1C1E4C]/80 hover:bg-[#2A2D6C] text-[#B6B2DA] hover:text-white rounded-full border border-[#E29D29]/30 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Kembali ke Data Diri</span>
+              </button>
+
               {/* Logo */}
               <div className="mb-2">
-                <Logo className="w-40 md:w-56" />
+                <Logo className="w-36 md:w-48" />
               </div>
 
               {/* Heading */}
-              <h2 className="text-white text-2xl md:text-3xl font-bold font-serif text-center max-w-xl leading-snug mb-6">
+              <h2 className="text-white text-2xl md:text-3xl font-bold font-serif text-center max-w-xl leading-snug mb-5">
                 Yuk cari tahu apa kelebihan dan kekuranganmu!
               </h2>
 
               {/* Center Illustration with Rounded Card Container */}
-              <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-[2rem] border-4 border-[#E29D29] overflow-hidden bg-white/5 shadow-2xl p-1 mb-4">
+              <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-[2rem] border-4 border-[#E29D29] overflow-hidden bg-white/5 shadow-2xl p-1 mb-4">
                 <div className="w-full h-full relative rounded-[1.7rem] overflow-hidden">
                   <Image
                     src="/images/quiz_illus.png"
@@ -63,49 +90,23 @@ export default function QuizIntroStep({ onNext }: StepProps) {
                 </div>
               </div>
 
-              {/* Quiz Tag */}
-              <span className="bg-[#E29D29] text-white text-xs font-extrabold tracking-widest px-6 py-1.5 rounded-full uppercase shadow-[0_2px_10px_rgba(226,157,41,0.3)] mb-8">
-                Quiz
-              </span>
-
-              {/* Decision Action Buttons */}
-              <motion.div 
+              {/* Action Button: "Mulai Quiz Evaluasi Diri →" */}
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full max-w-lg mt-2"
+                className="flex items-center justify-center w-full max-w-md mt-4"
               >
-                {/* Option 1: Already used VR -> Redirect direct to quiz selection */}
                 <button
-                  onClick={() => router.push("/quiz")}
-                  className="w-full sm:w-auto bg-[#E29D29] hover:bg-[#F2AE3A] active:scale-95 text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-full shadow-[0_4px_20px_rgba(226,157,41,0.45)] hover:shadow-[0_6px_24px_rgba(226,157,41,0.6)] transition-all tracking-wider uppercase flex items-center justify-center gap-2 border border-yellow-500/20"
+                  onClick={() => router.push("/self-appraisal-quiz")}
+                  className="w-full sm:w-auto bg-[#E29D29] hover:bg-[#F2AE3A] active:scale-95 text-white font-extrabold text-sm sm:text-base px-10 py-4 rounded-full shadow-[0_4px_25px_rgba(226,157,41,0.5)] hover:shadow-[0_6px_30px_rgba(226,157,41,0.7)] transition-all tracking-wider uppercase flex items-center justify-center gap-3 border border-yellow-500/30 cursor-pointer"
                 >
-                  Saya sudah menggunakan VR
-                  <svg className="w-4 h-4 fill-current stroke-current" viewBox="0 0 24 24" fill="none">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12H19M19 12L12 5M19 12L12 19" />
+                  Mulai Quiz Evaluasi Diri
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                 </button>
-
-                {/* Option 2: Haven't used VR -> Load Interactive Form */}
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="w-full sm:w-auto bg-transparent hover:bg-white/5 active:scale-95 text-white/90 hover:text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-full border border-white/20 hover:border-[#E29D29]/40 shadow-lg transition-all tracking-wider uppercase flex items-center justify-center gap-2"
-                >
-                  Saya belum menggunakan VR
-                </button>
               </motion.div>
-            </motion.div>
-          ) : (
-            /* Interactive Data Collection Form */
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, scale: 0.97, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 20 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="w-full flex items-center justify-center"
-            >
-              <InteractiveStudentForm onComplete={onNext} />
             </motion.div>
           )}
         </AnimatePresence>
